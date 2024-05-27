@@ -2,6 +2,7 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { Section } from "@radix-ui/themes";
 import {
   ConnectButton,
+  ConnectModal,
   useSignAndExecuteTransactionBlock,
   useSuiClient,
 } from "@mysten/dapp-kit";
@@ -11,23 +12,16 @@ import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { toB64 } from "@mysten/sui.js/utils";
 
 import { useState } from "react";
-import {
-  Tag,
-  message,
-  Flex,
-  Spin,
-  InputNumber,
-  Form,
-  Card,
-} from "antd";
+import { Tag, message, Flex, Spin, InputNumber, Form, Card } from "antd";
 import { ExclamationOutlined } from "@ant-design/icons";
 import { HTTP_PROVIDER_URL } from "../constants";
 import { useCurrentAccount } from "@mysten/dapp-kit";
-import { Button } from "flowbite-react";  
+import { Button } from "flowbite-react";
 
 function SendRedPack() {
   const [hash, setHash] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [open, setOpen] = useState(false);
   const [coin, setCoin] = useState(1);
   const [quantity, setQuantity] = useState(2);
 
@@ -54,6 +48,15 @@ function SendRedPack() {
     ""
   );
 
+  const handleButtonClicked = () => {
+    setIsLoading(true);
+    send();
+  };
+
+  const handleConnectModal = () => {
+    setOpen(true);
+  };
+
   const onCoinChange = (a) => {
     setCoin(a);
   };
@@ -64,62 +67,60 @@ function SendRedPack() {
   return (
     <>
       <div>
-        <div className="flex flex-col justify-center">
-          <div className="p-10 px-10 mx-auto rounded-sm space-y-36 three-d">
-            <div>
-              <Form
-                layout="horizontal"
-                labelCol={{ style: { width: "100px" } }}
-                wrapperCol={{ span: 16 }}
-              >
-                <Form.Item label="Sui">
-                  <InputNumber
-                    style={{ width: "100%" }}
-                    defaultValue={1}
-                    onChange={onCoinChange}
-                  />
-                </Form.Item>
-                <Form.Item label="Quantity">
-                  <InputNumber
-                    style={{ width: "100%" }}
-                    defaultValue={2}
-                    onChange={onQuantityChange}
-                  />
-                </Form.Item>
-              </Form>
-            </div>
-
-            <div className="mt-10">
-              {currentAccount && currentAccount.address ? (
-                <Button
-                  isProcessing={isLoading}
-                  size={"md"}
-                  color={"gray"}
-                  onClick={() => {
-                    setIsLoading(true);
-                    send();
-                  }}
-                  className="hover:bg-red-500 hover:text-white"
-                >
-                  Generate a Redpack
-                </Button>
-              ) : (
-                <ConnectButton  />
-              )}
-            </div>
+        <div className="flex flex-col w-1/3 h-auto p-10 px-10 mx-auto space-y-12 rounded-sm three-d">
+          <div>
+            <Form
+              layout="horizontal"
+              labelCol={{ style: { width: "100px" } }}
+              wrapperCol={{ span: 16 }}
+            >
+              <Form.Item label="Sui">
+                <InputNumber
+                  style={{ width: "100%" }}
+                  defaultValue={1}
+                  onChange={onCoinChange}
+                />
+              </Form.Item>
+              <Form.Item label="Quantity">
+                <InputNumber
+                  style={{ width: "100%" }}
+                  defaultValue={2}
+                  onChange={onQuantityChange}
+                />
+              </Form.Item>
+            </Form>
           </div>
-          <Section size="1">
-            {showTag}
-            {showTips}
-          </Section>
-          {isLoading ? (
-            <Spin tip="Loading" size="large" style={{ marginTop: 20 }}>
-              processing...
-            </Spin>
-          ) : (
-            ""
-          )}
+          <Button
+            isProcessing={isLoading}
+            size={"md"}
+            color={"gray"}
+            onClick={() => {
+              currentAccount && currentAccount.address
+                ? handleButtonClicked()
+                : handleConnectModal();
+            }}
+            className="hover:bg-red-500 hover:text-white "
+          >
+            {currentAccount && currentAccount.address
+              ? "Generate a Redpack"
+              : "Connect Wallet"}
+          </Button>
+          <ConnectModal
+            open={open} 
+            onOpenChange={(isOpen) => setOpen(isOpen)}
+          />
         </div>
+        <Section size="1">
+          {showTag}
+          {showTips}
+        </Section>
+        {isLoading ? (
+          <Spin tip="Loading" size="large" style={{ marginTop: 20 }}>
+            processing...
+          </Spin>
+        ) : (
+          ""
+        )}
       </div>
     </>
   );
