@@ -1,6 +1,7 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { Section } from "@radix-ui/themes";
 import {
+  ConnectButton,
   useSignAndExecuteTransactionBlock,
   useSuiClient,
 } from "@mysten/dapp-kit";
@@ -14,7 +15,6 @@ import {
   Tag,
   message,
   Flex,
-  Button,
   Spin,
   InputNumber,
   Form,
@@ -22,6 +22,8 @@ import {
 } from "antd";
 import { ExclamationOutlined } from "@ant-design/icons";
 import { HTTP_PROVIDER_URL } from "../constants";
+import { useCurrentAccount } from "@mysten/dapp-kit";
+import { Button } from "flowbite-react";  
 
 function SendRedPack() {
   const [hash, setHash] = useState("");
@@ -30,6 +32,7 @@ function SendRedPack() {
   const [quantity, setQuantity] = useState(2);
 
   const client = useSuiClient();
+  const currentAccount = useCurrentAccount();
 
   const zkRedpackPackageId = useNetworkVariable("zkRedpackPackageId");
   const zkredpackStoreObjectId = useNetworkVariable(
@@ -42,7 +45,7 @@ function SendRedPack() {
     ""
   );
   const showTips = hash ? (
-    <div style={{ fontSize: 12, lineHeight: "30px", color: "orange" }}>
+    <div>
       {" "}
       <ExclamationOutlined />
       {"Copy The Link & Share to Claimers!"}
@@ -60,46 +63,51 @@ function SendRedPack() {
   };
   return (
     <>
-      <Flex style={{ width: "100%", marginBottom: 20 }} align="center" vertical>
-        <Flex style={{ width: "100%", marginBottom: 20 }} justify="center">
-          <Card>
-            <Form
-              layout="horizontal"
-              style={{ maxWidth: 600, minWidth: 400 }}
-              labelCol={{ style: { width: "100px" } }}
-              wrapperCol={{ span: 16 }}
-            >
-              <Form.Item label="Sui">
-                <InputNumber
-                  style={{ width: "100%" }}
-                  defaultValue={1}
-                  onChange={onCoinChange}
-                />
-              </Form.Item>
-              <Form.Item label="Quantity">
-                <InputNumber
-                  style={{ width: "100%" }}
-                  defaultValue={2}
-                  onChange={onQuantityChange}
-                />
-              </Form.Item>
-            </Form>
-          </Card>
-        </Flex>
+      <div>
+        <div className="flex flex-col justify-center">
+          <div className="p-10 px-10 mx-auto rounded-sm space-y-36 three-d">
+            <div>
+              <Form
+                layout="horizontal"
+                labelCol={{ style: { width: "100px" } }}
+                wrapperCol={{ span: 16 }}
+              >
+                <Form.Item label="Sui">
+                  <InputNumber
+                    style={{ width: "100%" }}
+                    defaultValue={1}
+                    onChange={onCoinChange}
+                  />
+                </Form.Item>
+                <Form.Item label="Quantity">
+                  <InputNumber
+                    style={{ width: "100%" }}
+                    defaultValue={2}
+                    onChange={onQuantityChange}
+                  />
+                </Form.Item>
+              </Form>
+            </div>
 
-        <Flex vertical align="center">
-          <Button
-            loading={isLoading}
-            type="primary"
-            style={{ width: "300px", cursor: "pointer", marginBottom: "10px" }}
-            onClick={() => {
-              setIsLoading(true);
-              send();
-            }}
-          >
-            Generate a Redpack
-          </Button>
-
+            <div className="mt-10">
+              {currentAccount && currentAccount.address ? (
+                <Button
+                  isProcessing={isLoading}
+                  size={"md"}
+                  color={"gray"}
+                  onClick={() => {
+                    setIsLoading(true);
+                    send();
+                  }}
+                  className="hover:bg-red-500 hover:text-white"
+                >
+                  Generate a Redpack
+                </Button>
+              ) : (
+                <ConnectButton  />
+              )}
+            </div>
+          </div>
           <Section size="1">
             {showTag}
             {showTips}
@@ -111,8 +119,8 @@ function SendRedPack() {
           ) : (
             ""
           )}
-        </Flex>
-      </Flex>
+        </div>
+      </div>
     </>
   );
 

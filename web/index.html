@@ -2,10 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
+    <link href="https://unpkg.com/nes.css@latest/css/nes.min.css" rel="stylesheet" />
     <title>Sui-Redpack</title>
   </head>
+    <style>
+      body {
+        background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+        background-size: 400% 400%;
+        animation: gradient 15s ease infinite;
+        margin: 0;
+      }
+    
+      @keyframes gradient {
+        0% {
+          background-position: 0% 50%;
+        }
+    
+        50% {
+          background-position: 100% 50%;
+        }
+    
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+    </style>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
