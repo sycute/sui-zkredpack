@@ -1,6 +1,8 @@
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { Section } from "@radix-ui/themes";
 import {
+  ConnectButton,
+  ConnectModal,
   useSignAndExecuteTransactionBlock,
   useSuiClient,
 } from "@mysten/dapp-kit";
@@ -10,26 +12,21 @@ import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { toB64 } from "@mysten/sui.js/utils";
 
 import { useState } from "react";
-import {
-  Tag,
-  message,
-  Flex,
-  Button,
-  Spin,
-  InputNumber,
-  Form,
-  Card,
-} from "antd";
+import { Tag, message, Flex, Spin, InputNumber, Form, Card } from "antd";
 import { ExclamationOutlined } from "@ant-design/icons";
 import { HTTP_PROVIDER_URL } from "../constants";
+import { useCurrentAccount } from "@mysten/dapp-kit";
+import { Button } from "flowbite-react";
 
 function SendRedPack() {
   const [hash, setHash] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [open, setOpen] = useState(false);
   const [coin, setCoin] = useState(1);
   const [quantity, setQuantity] = useState(2);
 
   const client = useSuiClient();
+  const currentAccount = useCurrentAccount();
 
   const zkRedpackPackageId = useNetworkVariable("zkRedpackPackageId");
   const zkredpackStoreObjectId = useNetworkVariable(
@@ -42,7 +39,7 @@ function SendRedPack() {
     ""
   );
   const showTips = hash ? (
-    <div style={{ fontSize: 12, lineHeight: "30px", color: "orange" }}>
+    <div>
       {" "}
       <ExclamationOutlined />
       {"Copy The Link & Share to Claimers!"}
@@ -50,6 +47,15 @@ function SendRedPack() {
   ) : (
     ""
   );
+
+  const handleButtonClicked = () => {
+    setIsLoading(true);
+    send();
+  };
+
+  const handleConnectModal = () => {
+    setOpen(true);
+  };
 
   const onCoinChange = (a) => {
     setCoin(a);
@@ -60,12 +66,11 @@ function SendRedPack() {
   };
   return (
     <>
-      <Flex style={{ width: "100%", marginBottom: 20 }} align="center" vertical>
-        <Flex style={{ width: "100%", marginBottom: 20 }} justify="center">
-          <Card>
+      <div>
+        <div className="flex flex-col w-1/3 h-auto p-10 px-10 mx-auto space-y-12 rounded-sm three-d">
+          <div>
             <Form
               layout="horizontal"
-              style={{ maxWidth: 600, minWidth: 400 }}
               labelCol={{ style: { width: "100px" } }}
               wrapperCol={{ span: 16 }}
             >
@@ -84,35 +89,39 @@ function SendRedPack() {
                 />
               </Form.Item>
             </Form>
-          </Card>
-        </Flex>
-
-        <Flex vertical align="center">
+          </div>
           <Button
-            loading={isLoading}
-            type="primary"
-            style={{ width: "300px", cursor: "pointer", marginBottom: "10px" }}
+            isProcessing={isLoading}
+            size={"md"}
+            color={"gray"}
             onClick={() => {
-              setIsLoading(true);
-              send();
+              currentAccount && currentAccount.address
+                ? handleButtonClicked()
+                : handleConnectModal();
             }}
+            className="hover:bg-red-500 hover:text-white "
           >
-            Generate a Redpack
+            {currentAccount && currentAccount.address
+              ? "Generate a Redpack"
+              : "Connect Wallet"}
           </Button>
-
-          <Section size="1">
-            {showTag}
-            {showTips}
-          </Section>
-          {isLoading ? (
-            <Spin tip="Loading" size="large" style={{ marginTop: 20 }}>
-              processing...
-            </Spin>
-          ) : (
-            ""
-          )}
-        </Flex>
-      </Flex>
+          <ConnectModal
+            open={open} 
+            onOpenChange={(isOpen) => setOpen(isOpen)}
+          />
+        </div>
+        <Section size="1">
+          {showTag}
+          {showTips}
+        </Section>
+        {isLoading ? (
+          <Spin tip="Loading" size="large" style={{ marginTop: 20 }}>
+            processing...
+          </Spin>
+        ) : (
+          ""
+        )}
+      </div>
     </>
   );
 
