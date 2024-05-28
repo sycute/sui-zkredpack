@@ -59,7 +59,7 @@ function Claim() {
         >
           Claim The Redpack
         </Button>
-        <div className="packInfo">
+        <div className="nes-container is-rounded">
           <div className="packSender">
             sender: {getSimpleId(redPackInfo?.sender)}
           </div>
