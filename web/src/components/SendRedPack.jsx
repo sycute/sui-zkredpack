@@ -17,13 +17,17 @@ import { ExclamationOutlined } from "@ant-design/icons";
 import { HTTP_PROVIDER_URL } from "../constants";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { Button } from "flowbite-react";
-import {coinMap} from "../data"
+import { coinMap, coinDecimal } from "../data";
 function SendRedPack() {
   const [hash, setHash] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(false);
-  const [coin, setCoin] = useState(1);
-  const [quantity, setQuantity] = useState(2);
+
+  const [quantity, setQuantity] = useState(2); // number of red packets
+
+  const [amount, setAmount] = useState(1); // number of coin
+  const [coinType, setCoinType] = useState("0x2::sui::SUI");
+  const [coinDecimals, setCoinDecimals] = useState(9);
 
   const client = useSuiClient();
   const currentAccount = useCurrentAccount();
@@ -60,15 +64,17 @@ function SendRedPack() {
     setOpen(true);
   };
 
-  const onCoinChange = (a) => {
-    setCoin(a);
+  const onAmountChange = (a) => {
+    setAmount(a);
   };
 
   const onQuantityChange = (a) => {
     setQuantity(a);
   };
-  const onTypeChange= (a) => {
-    console.log(a.target.value);
+
+  const onTypeChange = (e) => {
+    setCoinType(e.target.value);
+    setCoinDecimals(coinDecimal[coinType]);
   };
   return (
     <>
@@ -77,21 +83,39 @@ function SendRedPack() {
           <div>
             <form action="">
               <div className="nes-select mb-10">
-                <select required  onChange={onTypeChange}>
-                  {coinMap.map((v)=>{
-                    return  <option value={v.value} key={v.value}>{v.label}</option>
+                <select
+                  required
+                  onChange={onTypeChange}
+                  defaultValue={"0x2::sui::SUI"}
+                >
+                  {coinMap.map((v) => {
+                    return (
+                      <option value={v.value} key={v.label}>
+                        {v.label}
+                      </option>
+                    );
                   })}
                 </select>
               </div>
 
               <div className="nes-field">
-                <label >Quantity</label>
-                <input type="text"  className="nes-input border-4" onChange={onQuantityChange}/>
+                <label>Quantity</label>
+                <input
+                  type="text"
+                  className="nes-input border-4"
+                  onChange={onQuantityChange}
+                  defaultValue={2}
+                />
               </div>
 
               <div className="nes-field">
-                <label>Coin</label>
-                <input type="text" className="nes-input border-4" onChange={onCoinChange}/>
+                <label>Amount</label>
+                <input
+                  type="text"
+                  className="nes-input border-4"
+                  onChange={onAmountChange}
+                  defaultValue={1}
+                />
               </div>
             </form>
           </div>
@@ -132,16 +156,15 @@ function SendRedPack() {
 
   function send() {
     const keypair = new Ed25519Keypair();
-    const url_hash = toB64(
-      decodeSuiPrivateKey(keypair.getSecretKey()).secretKey
-    );
-
+    let url_hash = toB64(decodeSuiPrivateKey(keypair.getSecretKey()).secretKey);
+    url_hash = url_hash + "&&" + coinType;
     const txb = new TransactionBlock();
-    const [given_coin] = txb.splitCoins(txb.gas, [coin * 1e9]);
+    // todo: change to moveCall, use coinType, amount * decimals
+    const [given_coin] = txb.splitCoins(txb.gas, [10 ** coinDecimals * amount]);
     const given_balance = txb.moveCall({
       target: "0x2::coin::into_balance",
       arguments: [txb.object(given_coin)],
-      typeArguments: ["0x2::sui::SUI"],
+      typeArguments: [coinType],
     });
     txb.moveCall({
       arguments: [
@@ -151,7 +174,7 @@ function SendRedPack() {
         txb.pure.address(keypair.toSuiAddress()),
       ],
       target: `${zkRedpackPackageId}::zkredpack::new_redpack`,
-      typeArguments: ["0x2::sui::SUI"],
+      typeArguments: [coinType],
     });
     signAndExecute(
       {

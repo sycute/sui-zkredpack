@@ -12,9 +12,9 @@ import { message } from "antd";
 import { Button } from "flowbite-react";
 import { useState, useEffect } from "react";
 import "./ClaimRedPack.css";
+import { coinMap, coinDecimal, coinTypeMap } from "../data";
 
 function Claim() {
-  const [isLoading, setIsLoading] = useState(false);
   const [redPackInfo, setRedPackInfo] = useState({});
   const zkRedpackPackageId = useNetworkVariable("zkRedpackPackageId");
   const zkredpackStoreObjectId = useNetworkVariable(
@@ -24,14 +24,11 @@ function Claim() {
   const currentAccount = useCurrentAccount();
   const { mutateAsync: signTransactionBlock } = useSignTransactionBlock();
   const location = useLocation();
-  let keypair;
-  try {
-    keypair = Ed25519Keypair.fromSecretKey(fromB64(location.hash.slice(1)));
-  } catch (e) {
-    message.warning("The link is invalid");
-    console.log(e);
-    return;
-  }
+
+  const [keypair, setKeypair] = useState(null);
+  const [hash, setHash] = useState("");
+  const [coinType, setCoinType] = useState("");
+  const [coinDecimals, setCoinDecimals] = useState(9);
 
   const getSimpleId = (id) => {
     if (!id) {
@@ -44,14 +41,29 @@ function Claim() {
   };
 
   useEffect(() => {
-    queryRedpack(keypair.toSuiAddress());
+    if (keypair) {
+      queryRedpack(keypair.toSuiAddress());
+    }
   }, []);
+
+  useEffect(() => {
+    let url = location.hash.slice(1).split("&&");
+    setHash(url[0]);
+    setCoinType(url[1]);
+    setCoinDecimals(coinDecimal[url[1]]);
+  }, [location, hash, coinType]);
+
+  useEffect(() => {
+    if (hash) {
+      let newKeypair = Ed25519Keypair.fromSecretKey(fromB64(hash));
+      setKeypair(newKeypair);
+    }
+  }, [hash]);
 
   return (
     <>
       <div className="packContainer">
         <Button
-          loading={isLoading}
           type="primary"
           onClick={async () => {
             claim();
@@ -64,8 +76,9 @@ function Claim() {
             sender: {getSimpleId(redPackInfo?.sender)}
           </div>
           <div className="packSender">
-            balance: {redPackInfo?.balance / 1000000000}
-            {" Sui"}
+            {/* todo: not only Sui, use data.js */}
+            balance: {redPackInfo?.balance / 10 ** coinDecimals}{" "}
+            {coinTypeMap[coinType]}
           </div>
           <div className="packRemain">
             quantity:{" "}
