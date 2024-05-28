@@ -17,7 +17,7 @@ import { ExclamationOutlined } from "@ant-design/icons";
 import { HTTP_PROVIDER_URL } from "../constants";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { Button } from "flowbite-react";
-
+import {coinMap} from "../data"
 function SendRedPack() {
   const [hash, setHash] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +34,10 @@ function SendRedPack() {
   );
   const { mutate: signAndExecute } = useSignAndExecuteTransactionBlock();
   const showTag = hash ? (
-    <Tag color="#2db7f5"> {HTTP_PROVIDER_URL + "claim#" + hash} </Tag>
+    <Tag color="#2db7f5" className="text-lg">
+      {" "}
+      {HTTP_PROVIDER_URL + "claim#" + hash}{" "}
+    </Tag>
   ) : (
     ""
   );
@@ -64,31 +67,33 @@ function SendRedPack() {
   const onQuantityChange = (a) => {
     setQuantity(a);
   };
+  const onTypeChange= (a) => {
+    console.log(a.target.value);
+  };
   return (
     <>
       <div className="flex flex-col items-center">
         <div className="flex flex-col w-1/3 h-auto p-10 px-10 mx-auto space-y-12 rounded-sm three-d mb-16">
           <div>
-            <Form
-              layout="horizontal"
-              labelCol={{ style: { width: "100px" } }}
-              wrapperCol={{ span: 16 }}
-            >
-              <Form.Item label="Sui">
-                <InputNumber
-                  style={{ width: "100%" }}
-                  defaultValue={1}
-                  onChange={onCoinChange}
-                />
-              </Form.Item>
-              <Form.Item label="Quantity">
-                <InputNumber
-                  style={{ width: "100%" }}
-                  defaultValue={2}
-                  onChange={onQuantityChange}
-                />
-              </Form.Item>
-            </Form>
+            <form action="">
+              <div className="nes-select mb-10">
+                <select required  onChange={onTypeChange}>
+                  {coinMap.map((v)=>{
+                    return  <option value={v.value} key={v.value}>{v.label}</option>
+                  })}
+                </select>
+              </div>
+
+              <div className="nes-field">
+                <label >Quantity</label>
+                <input type="text"  className="nes-input border-4" onChange={onQuantityChange}/>
+              </div>
+
+              <div className="nes-field">
+                <label>Coin</label>
+                <input type="text" className="nes-input border-4" onChange={onCoinChange}/>
+              </div>
+            </form>
           </div>
           <Button
             isProcessing={isLoading}
@@ -99,7 +104,7 @@ function SendRedPack() {
                 ? handleButtonClicked()
                 : handleConnectModal();
             }}
-            className="hover:bg-red-500 hover:text-white "
+            className="hover:bg-red-500 hover:text-white border-4"
           >
             {currentAccount && currentAccount.address
               ? "Generate a Redpack"
