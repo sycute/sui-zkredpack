@@ -8,7 +8,8 @@ import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { fromB64 } from "@mysten/sui.js/utils";
 import { useLocation } from "react-router-dom";
 import { useNetworkVariable } from "../networkConfig";
-import { message, Button } from "antd";
+import { message } from "antd";
+import { Button } from "flowbite-react";
 import { useState, useEffect } from "react";
 import "./ClaimRedPack.css";
 

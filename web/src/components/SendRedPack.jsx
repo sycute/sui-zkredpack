@@ -12,7 +12,7 @@ import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { toB64 } from "@mysten/sui.js/utils";
 
 import { useState } from "react";
-import { Tag, message, Flex, Spin, InputNumber, Form, Card } from "antd";
+import { Tag, message, Spin, InputNumber, Form } from "antd";
 import { ExclamationOutlined } from "@ant-design/icons";
 import { HTTP_PROVIDER_URL } from "../constants";
 import { useCurrentAccount } from "@mysten/dapp-kit";
@@ -66,8 +66,8 @@ function SendRedPack() {
   };
   return (
     <>
-      <div>
-        <div className="flex flex-col w-1/3 h-auto p-10 px-10 mx-auto space-y-12 rounded-sm three-d">
+      <div className="flex flex-col items-center">
+        <div className="flex flex-col w-1/3 h-auto p-10 px-10 mx-auto space-y-12 rounded-sm three-d mb-16">
           <div>
             <Form
               layout="horizontal"
@@ -106,7 +106,7 @@ function SendRedPack() {
               : "Connect Wallet"}
           </Button>
           <ConnectModal
-            open={open} 
+            open={open}
             onOpenChange={(isOpen) => setOpen(isOpen)}
           />
         </div>
