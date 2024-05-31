@@ -4,6 +4,7 @@ import {
   useSuiClient,
   ConnectModal,
 } from "@mysten/dapp-kit";
+import { Section } from "@radix-ui/themes";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { TransactionBlock } from "@mysten/sui.js/transactions";
 import { fromB64 } from "@mysten/sui.js/utils";
@@ -28,9 +29,9 @@ function Claim() {
   const [isLoading, setIsLoading] = useState("false");
   const [open, setOpen] = useState(false);
   const [keypair, setKeypair] = useState(null);
-  // const [hash, setHash] = useState("");
   const [coinType, setCoinType] = useState("0x2::sui::SUI");
   const [coinDecimals, setCoinDecimals] = useState(9);
+  const [txdigest, setTxdigest] = useState("");
 
   const getSimpleId = (id) => {
     if (!id) {
@@ -60,6 +61,14 @@ function Claim() {
     setOpen(true);
   };
 
+  const showTips = txdigest ? (
+    <div>
+      {"Claimed! Digest is "} {txdigest}
+    </div>
+  ) : (
+    ""
+  );
+
   return (
     <>
       <div className="packContainer">
@@ -80,8 +89,11 @@ function Claim() {
         </div>
 
         <Button
+          className="mt-4"
           loading={isLoading}
           type="primary"
+          size={"lg"}
+          color={"teal"}
           onClick={async () => {
             currentAccount && currentAccount.address
               ? await handleButtonClicked()
@@ -93,22 +105,25 @@ function Claim() {
             : "Connect Wallet"}
         </Button>
         <ConnectModal open={open} onOpenChange={(isOpen) => setOpen(isOpen)} />
+        <Section size="1">
+          {showTips}
+        </Section>
       </div>
     </>
   );
 
   async function claim() {
     if (!currentAccount?.address) {
-      message.error("Please connect wallet");
+      message.error("Connect wallet first");
       return;
     }
 
-    // if (
-    //   redPackInfo?.claimers.fields?.contents.includes(currentAccount.address)
-    // ) {
-    //   message.warning("You Already claimed");
-    //   return;
-    // }
+    if (
+      redPackInfo?.claimers.fields?.contents.includes(currentAccount.address)
+    ) {
+      message.warning("You Already claimed");
+      return;
+    }
 
     setIsLoading("true");
 
@@ -153,7 +168,6 @@ function Claim() {
         signature: [sponsoredBytes.signature, signedTx.signature],
         options: {
           showEffects: true,
-          showObjectChanges: true,
         },
       });
 
@@ -162,7 +176,9 @@ function Claim() {
           message.warning(resply.errors);
           console.log(resply.errors);
         } else {
-          message.success("Claimed! Digest: " + resply.digest);
+          console.log("Claimed! Digest: " + resply.digest);
+          // message.success("Claimed! Digest: " + resply.digest);
+          setTxdigest(resply.digest);
         }
       });
     } catch (e) {
@@ -205,7 +221,6 @@ function Claim() {
   }
 
   async function queryRedpack(key) {
-    console.log("queryRedpack", key);
     client
       .getDynamicFields({
         parentId: zkredpackStoreObjectId,

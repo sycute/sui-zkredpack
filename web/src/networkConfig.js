@@ -8,7 +8,7 @@ import { createNetworkConfig } from "@mysten/dapp-kit";
 const { networkConfig, useNetworkVariable, useNetworkVariables } =
   createNetworkConfig({
     testnet: {
-      url: getFullnodeUrl("devnet"),
+      url: getFullnodeUrl("testnet"),
       variables: {
         zkRedpackPackageId: TESTNET_ZKREDPACK_PACKAGE_ID,
         testnetRedpackStoreObjectId: TESTNET_REDPACKSTORE_OBJECT_ID,
