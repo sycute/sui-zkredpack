@@ -63,7 +63,7 @@ function Claim() {
 
   const showTips = txdigest ? (
     <div>
-      {"Claimed! Digest is "} {txdigest}
+      <a href={`https://suiscan.xyz/testnet/tx/${txdigest}`}>Claimed! See at explorer</a>
     </div>
   ) : (
     ""
@@ -89,7 +89,7 @@ function Claim() {
         </div>
 
         <Button
-          className="mt-4"
+          className="mt-4 mb-4"
           loading={isLoading}
           type="primary"
           size={"lg"}

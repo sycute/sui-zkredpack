@@ -79,7 +79,7 @@ function SendRedPack() {
   return (
     <>
       <div className="flex flex-col items-center">
-        <div className="flex flex-col w-1/3 h-auto p-10 px-10 mx-auto space-y-12 rounded-sm three-d mb-16">
+        <div className="flex flex-col w-1/3 h-auto p-10 px-10 mx-auto space-y-12 rounded-sm three-d mb-12">
           <div>
             <form action="">
               <div className="nes-select mb-10">
@@ -139,12 +139,12 @@ function SendRedPack() {
             onOpenChange={(isOpen) => setOpen(isOpen)}
           />
         </div>
-        <Section size="1">
+        <Section size="1" >
           {showTag}
           {showTips}
         </Section>
         {isLoading ? (
-          <Spin tip="Loading" size="large" style={{ marginTop: 20 }}>
+          <Spin tip="Loading" size="default">
             processing...
           </Spin>
         ) : (
