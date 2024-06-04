@@ -65,11 +65,11 @@ function SendRedPack() {
   };
 
   const onAmountChange = (a) => {
-    setAmount(a);
+    setAmount(a.target.value);
   };
 
   const onQuantityChange = (a) => {
-    setQuantity(a);
+    setQuantity(a.target.value);
   };
 
   const onTypeChange = (e) => {
@@ -101,7 +101,7 @@ function SendRedPack() {
               <div className="nes-field">
                 <label>Quantity</label>
                 <input
-                  type="text"
+                  type="number"
                   className="nes-input border-4"
                   onChange={onQuantityChange}
                   defaultValue={2}
@@ -111,7 +111,7 @@ function SendRedPack() {
               <div className="nes-field">
                 <label>Amount</label>
                 <input
-                  type="text"
+                  type="number"
                   className="nes-input border-4"
                   onChange={onAmountChange}
                   defaultValue={1}
@@ -139,7 +139,7 @@ function SendRedPack() {
             onOpenChange={(isOpen) => setOpen(isOpen)}
           />
         </div>
-        <Section size="1" >
+        <Section size="1">
           {showTag}
           {showTips}
         </Section>
