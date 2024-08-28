@@ -16,8 +16,6 @@ import { ExclamationOutlined } from "@ant-design/icons";
 import { HTTP_PROVIDER_URL } from "../constants";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { Button } from "flowbite-react";
-import { coinMap, coinDecimal } from "../data";
-
 function SendRedPack() {
   const [hash, setHash] = useState("");
   const [isLoading, setIsLoading] = useState(false);
