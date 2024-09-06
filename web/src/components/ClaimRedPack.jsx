@@ -44,14 +44,16 @@ function Claim() {
 
   useEffect(() => {
     let url = location.hash.slice(1).split("&&");
+    client.getCoinMetadata(url[1]).then((res) => {
+      setCoinDecimals(res.decimals)
+    });
     let newKeypair = Ed25519Keypair.fromSecretKey(fromB64(url[0]));
     setKeypair(newKeypair);
     queryRedpack(newKeypair.toSuiAddress());
 
     setCoinType(url[1]);
 
-    client.getCoinMetadata(url[1]).then((res) =>
-      setCoinDecimals(res.decimals));
+    
     
   }, [location, coinType]);
 
@@ -134,7 +136,7 @@ function Claim() {
 
     try {
       console.log("待领取的币种：" + coinType);
-      
+    
       let txb = new TransactionBlock();
       txb.setSender(keypair.toSuiAddress());
       txb.moveCall({
@@ -206,7 +208,6 @@ function Claim() {
     let retires = 50;
     while (retires !== 0) {
       const coins = await client.getCoins({ owner: sponsor, limit: 1 });
-      console.log("got coins from sponsor", coins.data.length);
       if (coins.data.length > 0) {
         payment = coins.data.map((coin) => ({
           objectId: coin.coinObjectId,
@@ -239,7 +240,6 @@ function Claim() {
             .getObject({ id: d?.objectId, options: { showContent: true } })
             .then((res) => {
               if (res.data?.content?.dataType == "moveObject") {
-                // res.data.content.fields as unknown as Redpack;
                 console.log(res.data.content.fields);
                 setRedPackInfo(res.data.content.fields);
               }

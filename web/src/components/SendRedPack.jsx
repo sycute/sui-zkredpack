@@ -37,9 +37,11 @@ function SendRedPack() {
  useEffect(()=>{
   setUserBalances(res.userBalances)
   console.log(userBalances);
-  if(userBalances?.length>0){
-    setCoinType(userBalances[0].coinType)
-  }
+  //  if (userBalances?.length > 0) {
+  //   console.log("user balance ", userBalances[0].coinType);
+    
+  //   setCoinType(userBalances[0].coinType)
+  // }
  },[client,currentAccount,res])
 
   const zkRedpackPackageId = useNetworkVariable("zkRedpackPackageId");
@@ -94,32 +96,31 @@ function SendRedPack() {
   };
 
   const send = async () => {
-
     const coinList = await client.getCoins({
       owner: currentAccount?.address,
       coinType: coinType,
     });
 
-    console.log(coinList.data);
-
     let idList = coinList.data.map((i) => {
       return i.coinObjectId;
     });
 
-    const { decimals } = await client.getCoinMetadata({ coinType });
+    const {decimals } = await client.getCoinMetadata({ coinType });
 
     
     let txb = new TransactionBlock();
 
     let given_coin;
-    if (coinType != "0x2::sui::SUI" && idList.length > 1) {
+    if (coinType != "0x2::sui::SUI") {
       // 合并所有coin对象
-      for (let i = 1; i < idList.length; i++) {
-        txb.moveCall({
-          target: "0x2::coin::join",
-          arguments: [txb.object(idList[0]), txb.object(idList[i])],
-          typeArguments: [coinType],
-        });
+      if (idList.length > 1) {
+        for (let i = 1; i < idList.length; i++) {
+          txb.moveCall({
+            target: "0x2::coin::join",
+            arguments: [txb.object(idList[0]), txb.object(idList[i])],
+            typeArguments: [coinType],
+          });
+        }
       }
 
       given_coin = txb.moveCall({
@@ -128,7 +129,7 @@ function SendRedPack() {
         typeArguments: [coinType],
       })
     } else {
-      [given_coin] = txb.splitCoins(idList[0], [amount * 10 ** decimals]);
+      [given_coin] = txb.splitCoins(txb.gas, [amount * 10 ** decimals]);
     }
     
     const keypair = new Ed25519Keypair();
@@ -185,9 +186,9 @@ function SendRedPack() {
                 <select
                   required
                   onChange={onTypeChange}
-                  defaultValue={"0x2::sui::SUI"}
                 >
                   {userBalances?.map((v) => {
+                    
                     let coinName = v.coinType.split("::").reverse()[0];
                     return (
                       <option value={v.coinType} key={v.coinType}>
