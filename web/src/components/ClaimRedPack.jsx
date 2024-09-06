@@ -14,7 +14,6 @@ import { message } from "antd";
 import { Button } from "flowbite-react";
 import { useState, useEffect } from "react";
 import "./ClaimRedPack.css";
-import { coinDecimal, coinTypeMap } from "../data";
 
 function Claim() {
   const [redPackInfo, setRedPackInfo] = useState({});
@@ -29,8 +28,8 @@ function Claim() {
   const [isLoading, setIsLoading] = useState("false");
   const [open, setOpen] = useState(false);
   const [keypair, setKeypair] = useState(null);
-  const [coinType, setCoinType] = useState("0x2::sui::SUI");
-  const [coinDecimals, setCoinDecimals] = useState(9);
+  const [coinType, setCoinType] = useState("");
+  const [coinDecimals, setCoinDecimals] = useState(1);
   const [txdigest, setTxdigest] = useState("");
 
   const getSimpleId = (id) => {
@@ -48,8 +47,12 @@ function Claim() {
     let newKeypair = Ed25519Keypair.fromSecretKey(fromB64(url[0]));
     setKeypair(newKeypair);
     queryRedpack(newKeypair.toSuiAddress());
+
     setCoinType(url[1]);
-    setCoinDecimals(coinDecimal[url[1]]);
+
+    client.getCoinMetadata(url[1]).then((res) =>
+      setCoinDecimals(res.decimals));
+    
   }, [location, coinType]);
 
   const handleButtonClicked = async () => {
@@ -63,7 +66,7 @@ function Claim() {
 
   const showTips = txdigest ? (
     <div>
-      <a href={`https://suiscan.xyz/testnet/tx/${txdigest}`}>Claimed! See at explorer</a>
+      <a href={`https://suiscan.xyz/mainnet/tx/${txdigest}`}>Claimed! See at explorer</a>
     </div>
   ) : (
     ""
@@ -78,13 +81,15 @@ function Claim() {
           </div>
           <div className="packSender">
             balance: {redPackInfo?.balance / 10 ** coinDecimals}{" "}
-            {coinTypeMap[coinType]}
           </div>
           <div className="packRemain">
             quantity:{" "}
             {redPackInfo?.quantity -
               redPackInfo?.claimers?.fields.contents?.length}{" "}
             / {redPackInfo?.quantity}
+          </div>
+          <div className="conType">
+            coinType: {coinType}
           </div>
         </div>
 
@@ -128,6 +133,8 @@ function Claim() {
     setIsLoading("true");
 
     try {
+      console.log("待领取的币种：" + coinType);
+      
       let txb = new TransactionBlock();
       txb.setSender(keypair.toSuiAddress());
       txb.moveCall({

@@ -10,25 +10,37 @@ import { decodeSuiPrivateKey } from "@mysten/sui.js/cryptography";
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { toB64 } from "@mysten/sui.js/utils";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Tag, message, Spin } from "antd";
 import { ExclamationOutlined } from "@ant-design/icons";
 import { HTTP_PROVIDER_URL } from "../constants";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 import { Button } from "flowbite-react";
+import { useCoinBalances } from "../lib/useUserBalance";
+
 function SendRedPack() {
   const [hash, setHash] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [open, setOpen] = useState(false);
-
+  const [userBalances,setUserBalances]=useState([])
   const [quantity, setQuantity] = useState(2); // number of red packets
 
   const [amount, setAmount] = useState(1); // number of coin
-  const [coinType, setCoinType] = useState("0x2::sui::SUI");
-  const [coinDecimals, setCoinDecimals] = useState(9);
+  const [coinType, setCoinType] = useState("");
 
   const client = useSuiClient();
+
   const currentAccount = useCurrentAccount();
+
+  const res = useCoinBalances(client, currentAccount);
+
+ useEffect(()=>{
+  setUserBalances(res.userBalances)
+  console.log(userBalances);
+  if(userBalances?.length>0){
+    setCoinType(userBalances[0].coinType)
+  }
+ },[client,currentAccount,res])
 
   const zkRedpackPackageId = useNetworkVariable("zkRedpackPackageId");
   const zkredpackStoreObjectId = useNetworkVariable(
@@ -63,6 +75,13 @@ function SendRedPack() {
   };
 
   const onAmountChange = (a) => {
+    let coin = userBalances.find((i) => i.coinType == coinType);
+
+    let balance = coin?.totalBalance || 0;
+
+    if (balance < a.target.value) {
+      message.error("账户余额不足，交易可能会失败！");
+    }
     setAmount(a.target.value);
   };
 
@@ -72,8 +91,90 @@ function SendRedPack() {
 
   const onTypeChange = (e) => {
     setCoinType(e.target.value);
-    setCoinDecimals(coinDecimal[coinType]);
   };
+
+  const send = async () => {
+
+    const coinList = await client.getCoins({
+      owner: currentAccount?.address,
+      coinType: coinType,
+    });
+
+    console.log(coinList.data);
+
+    let idList = coinList.data.map((i) => {
+      return i.coinObjectId;
+    });
+
+    const { decimals } = await client.getCoinMetadata({ coinType });
+
+    
+    let txb = new TransactionBlock();
+
+    let given_coin;
+    if (coinType != "0x2::sui::SUI" && idList.length > 1) {
+      // 合并所有coin对象
+      for (let i = 1; i < idList.length; i++) {
+        txb.moveCall({
+          target: "0x2::coin::join",
+          arguments: [txb.object(idList[0]), txb.object(idList[i])],
+          typeArguments: [coinType],
+        });
+      }
+
+      given_coin = txb.moveCall({
+        target: "0x2::coin::split",
+        arguments: [txb.object(idList[0]), txb.pure(amount * 10 ** decimals)],
+        typeArguments: [coinType],
+      })
+    } else {
+      [given_coin] = txb.splitCoins(idList[0], [amount * 10 ** decimals]);
+    }
+    
+    const keypair = new Ed25519Keypair();
+    let url_hash = toB64(decodeSuiPrivateKey(keypair.getSecretKey()).secretKey)+ "&&" + coinType ;
+    
+    const given_balance = txb.moveCall({
+      target: "0x2::coin::into_balance",
+      arguments: [txb.object(given_coin)],
+      typeArguments: [coinType],
+    });
+
+    txb.moveCall({
+      arguments: [
+        txb.object(zkredpackStoreObjectId),
+        txb.object(given_balance),
+        txb.pure.u64(quantity),
+        txb.pure.address(keypair.toSuiAddress()),
+      ],
+      target: `${zkRedpackPackageId}::zkredpack::new_redpack`,
+      typeArguments: [coinType],
+    });
+
+    signAndExecute(
+      {
+        transactionBlock: txb,
+        options: {
+          showEffects: true,
+          showObjectChanges: true,
+        },
+      },
+      {
+        onSuccess: (tx) => {
+          client.waitForTransactionBlock({ digest: tx.digest }).then(() => {
+            setHash(url_hash);
+            setIsLoading(false);
+            message.success("now copy the generated link.");
+          });
+        },
+        onError: (error) => {
+          setIsLoading(false);
+          message.warning(error.message);
+        },
+      }
+    );
+  };
+
   return (
     <>
       <div className="flex flex-col items-center">
@@ -86,10 +187,11 @@ function SendRedPack() {
                   onChange={onTypeChange}
                   defaultValue={"0x2::sui::SUI"}
                 >
-                  {coinMap.map((v) => {
+                  {userBalances?.map((v) => {
+                    let coinName = v.coinType.split("::").reverse()[0];
                     return (
-                      <option value={v.value} key={v.label}>
-                        {v.label}
+                      <option value={v.coinType} key={v.coinType}>
+                        {coinName}
                       </option>
                     );
                   })}
@@ -151,52 +253,6 @@ function SendRedPack() {
       </div>
     </>
   );
-
-  function send() {
-    const keypair = new Ed25519Keypair();
-    let url_hash = toB64(decodeSuiPrivateKey(keypair.getSecretKey()).secretKey);
-    url_hash = url_hash + "&&" + coinType;
-    const txb = new TransactionBlock();
-    // todo: change to moveCall, use coinType, amount * decimals
-    const [given_coin] = txb.splitCoins(txb.gas, [10 ** coinDecimals * amount]);
-    const given_balance = txb.moveCall({
-      target: "0x2::coin::into_balance",
-      arguments: [txb.object(given_coin)],
-      typeArguments: [coinType],
-    });
-    txb.moveCall({
-      arguments: [
-        txb.object(zkredpackStoreObjectId),
-        txb.object(given_balance),
-        txb.pure.u64(quantity),
-        txb.pure.address(keypair.toSuiAddress()),
-      ],
-      target: `${zkRedpackPackageId}::zkredpack::new_redpack`,
-      typeArguments: [coinType],
-    });
-    signAndExecute(
-      {
-        transactionBlock: txb,
-        options: {
-          showEffects: true,
-          showObjectChanges: true,
-        },
-      },
-      {
-        onSuccess: (tx) => {
-          client.waitForTransactionBlock({ digest: tx.digest }).then(() => {
-            setHash(url_hash);
-            setIsLoading(false);
-            message.success("now copy the generated link.");
-          });
-        },
-        onError: (error) => {
-          setIsLoading(false);
-          message.warning(error.message);
-        },
-      }
-    );
-  }
 }
 
 export default SendRedPack;
